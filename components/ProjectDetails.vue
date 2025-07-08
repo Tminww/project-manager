@@ -2,28 +2,6 @@
   <div class="space-y-6">
     <!-- Информация о проекте -->
     <div>
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h3 class="text-lg font-medium text-gray-900">{{ project.name }}</h3>
-          <p class="mt-1 text-sm text-gray-500">
-            Дедлайн: {{ formatDate(project.deadline) }}
-          </p>
-        </div>
-        <div class="flex gap-2">
-          <span
-            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-            :class="statusColor"
-          >
-            {{ project.status }}
-          </span>
-          <span
-            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-            :class="urgencyColor"
-          >
-            {{ project.urgency }}
-          </span>
-        </div>
-      </div>
       <p class="text-sm text-gray-600">{{ project.description }}</p>
     </div>
 
