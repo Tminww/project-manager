@@ -57,7 +57,7 @@
           :key="task.id"
           class="flex items-start gap-3 p-3 bg-white rounded-lg shadow-sm"
         >
-          <div class="flex-shrink-0 pt-1">
+          <div class="flex-shrink-0">
             <input
               type="checkbox"
               :checked="task.completed"
