@@ -15,6 +15,8 @@ export const useProjectStore = defineStore("projects", () => {
   const selectedProject = ref<Project | null>(null);
   const lastSaved = ref<Date | null>(null);
   const isInitialized = ref(false);
+  const config = useRuntimeConfig();
+  const baseURL = config.public.baseURL || "http://localhost:3000";
 
   // Вычисляемое свойство для форматирования времени последнего сохранения
   const lastSavedFormatted = computed(() => {
@@ -47,7 +49,7 @@ export const useProjectStore = defineStore("projects", () => {
   // Загрузка данных при инициализации
   async function loadProjects(): Promise<Project[]> {
     try {
-      const response = await fetch("/api/projects");
+      const response = await fetch(`${baseURL}/api/projects`);
       if (!response.ok) {
         throw new Error(`Ошибка при загрузке проектов: ${response.statusText}`);
       }
@@ -80,7 +82,7 @@ export const useProjectStore = defineStore("projects", () => {
         "Сохраняемые проекты:",
         JSON.stringify(projects.value, null, 2)
       );
-      const response = await fetch("/api/projects", {
+      const response = await fetch(`${baseURL}/api/projects`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -140,7 +142,7 @@ export const useProjectStore = defineStore("projects", () => {
 
   async function updateProject(project: Project) {
     try {
-      const response = await fetch(`/api/projects/${project.id}`, {
+      const response = await fetch(`${baseURL}/api/projects/${project.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -163,7 +165,7 @@ export const useProjectStore = defineStore("projects", () => {
 
   async function deleteProject(id: string) {
     try {
-      const response = await fetch(`/api/projects/${id}`, {
+      const response = await fetch(`${baseURL}/api/projects/${id}`, {
         method: "DELETE",
       });
       if (!response.ok) {

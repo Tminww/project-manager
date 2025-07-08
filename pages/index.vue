@@ -1,9 +1,12 @@
 <template>
   <div class="h-screen flex flex-col">
     <header class="bg-white shadow shrink-0">
-      <div class="w-full px-4 py-6 sm:px-6 lg:px-8">
+      <div class="w-full px-4 py-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
-          <h1 class="text-3xl font-bold tracking-tight text-gray-900">
+          <h1
+            class="text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-4"
+          >
+            <img src="/favicon.ico" alt="Project Manager" class="w-10 h-10" />
             Менеджер проектов
           </h1>
           <div class="flex items-center gap-4">
