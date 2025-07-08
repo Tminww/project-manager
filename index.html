@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Project Todo Manager</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.5/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.441.0/dist/umd/lucide.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #f3f4f6;
+        color: #111827;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+      }
+      .title {
+        font-size: 1.875rem;
+        font-weight: bold;
+        color: #1f2937;
+      }
+      .button-group {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        transition: all 0.2s;
+      }
+      .btn-primary {
+        background: #3b82f6;
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #2563eb;
+      }
+      .btn-success {
+        background: #10b981;
+        color: white;
+      }
+      .btn-success:hover {
+        background: #059669;
+      }
+      .btn-purple {
+        background: #8b5cf6;
+        color: white;
+      }
+      .btn-purple:hover {
+        background: #7c3aed;
+      }
+      .btn-gray {
+        background: #6b7280;
+        color: white;
+      }
+      .btn-gray:hover {
+        background: #4b5563;
+      }
+      .btn-red {
+        background: #ef4444;
+        color: white;
+      }
+      .btn-red:hover {
+        background: #dc2626;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+      }
+      .card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.2s;
+      }
+      .card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+      }
+      .card-title {
+        font-size: 1.125rem;
+        font-weight: 500;
+      }
+      .card-actions {
+        display: flex;
+        gap: 0.25rem;
+      }
+      .icon-btn {
+        padding: 0.25rem;
+        border: none;
+        background: none;
+        cursor: pointer;
+        border-radius: 0.25rem;
+        transition: color 0.2s;
+      }
+      .icon-btn.blue {
+        color: #3b82f6;
+      }
+      .icon-btn.blue:hover {
+        color: #2563eb;
+      }
+      .icon-btn.red {
+        color: #ef4444;
+      }
+      .icon-btn.red:hover {
+        color: #dc2626;
+      }
+      .badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+      }
+      .badge-high {
+        background: #fef2f2;
+        color: #b91c1c;
+      }
+      .badge-medium {
+        background: #fefce8;
+        color: #ca8a04;
+      }
+      .badge-low {
+        background: #f0fdf4;
+        color: #16a34a;
+      }
+      .badge-active {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+      .badge-completed {
+        background: #f0fdf4;
+        color: #16a34a;
+      }
+      .badge-paused {
+        background: #f9fafb;
+        color: #374151;
+      }
+      .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        z-index: 50;
+      }
+      .modal-content {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        width: 100%;
+        max-width: 400px;
+      }
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+      }
+      .form-control {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+      }
+      .form-control:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      .todo-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: #f9fafb;
+        border-radius: 0.375rem;
+        border: 1px solid #e5e7eb;
+      }
+      .todo-checkbox {
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid #d1d5db;
+        border-radius: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      .todo-checkbox.completed {
+        background: #10b981;
+        border-color: #10b981;
+      }
+      .todo-text {
+        flex: 1;
+      }
+      .todo-text.completed {
+        text-decoration: line-through;
+        color: #6b7280;
+      }
+      .todo-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .todo-input {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 3rem 0;
+        color: #6b7280;
+      }
+      .hidden {
+        display: none;
+      }
+      .project-detail {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .project-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+      }
+      .project-info h2 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+      .project-info p {
+        color: #6b7280;
+        margin-bottom: 1rem;
+      }
+      .project-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.875rem;
+      }
+      .project-meta span {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState } = React;
+      //   const { Plus, Edit2, Trash2, Check, X, Save } = lucide;
+
+      let jsonFileHandle = null;
+
+      async function loadInitialJSON() {
+        try {
+          // Запросить доступ к файлу
+          [jsonFileHandle] = await window.showOpenFilePicker({
+            types: [
+              {
+                description: "JSON Files",
+                accept: { "application/json": [".json"] },
+              },
+            ],
+          });
+
+          const file = await jsonFileHandle.getFile();
+          const text = await file.text();
+          const data = JSON.parse(text);
+
+          // Проверь и загрузи
+          if (Array.isArray(data)) {
+            importProjects(data);
+            console.log("Проекты успешно загружены");
+          } else {
+            alert("Неверный формат данных JSON");
+          }
+        } catch (err) {
+          console.error("Ошибка при загрузке JSON:", err);
+        }
+      }
+
+      async function saveToJSON(projects) {
+        if (!jsonFileHandle) {
+          alert("Файл JSON ещё не загружен");
+          return;
+        }
+
+        try {
+          const writable = await jsonFileHandle.createWritable();
+          await writable.write(JSON.stringify(projects, null, 2));
+          await writable.close();
+          console.log("Проекты сохранены");
+        } catch (err) {
+          console.error("Ошибка при сохранении:", err);
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        loadInitialJSON();
+      });
+
+      const ProjectTodoApp = () => {
+        const [projects, setProjects] = useState([]);
+        const [selectedProject, setSelectedProject] = useState(null);
+        const [showNewProject, setShowNewProject] = useState(false);
+        const [editingProject, setEditingProject] = useState(null);
+        const [newProjectData, setNewProjectData] = useState({
+          name: "",
+          description: "",
+          priority: "Medium",
+          status: "Active",
+          dueDate: "",
+        });
+
+        const createProject = () => {
+          const newProject = {
+            id: Date.now(),
+            ...newProjectData,
+            todos: [],
+            createdAt: new Date().toISOString(),
+          };
+          setProjects([...projects, newProject]);
+          setNewProjectData({
+            name: "",
+            description: "",
+            priority: "Medium",
+            status: "Active",
+            dueDate: "",
+          });
+          setShowNewProject(false);
+        };
+
+        const updateProject = (projectId, updates) => {
+          setProjects(
+            projects.map((p) => (p.id === projectId ? { ...p, ...updates } : p))
+          );
+          if (selectedProject && selectedProject.id === projectId) {
+            setSelectedProject({ ...selectedProject, ...updates });
+          }
+        };
+
+        const deleteProject = (projectId) => {
+          setProjects(projects.filter((p) => p.id !== projectId));
+          if (selectedProject && selectedProject.id === projectId) {
+            setSelectedProject(null);
+          }
+        };
+
+        const addTodo = (projectId, todoText) => {
+          const newTodo = {
+            id: Date.now(),
+            text: todoText,
+            completed: false,
+            createdAt: new Date().toISOString(),
+          };
+
+          const updatedProjects = projects.map((p) =>
+            p.id === projectId ? { ...p, todos: [...p.todos, newTodo] } : p
+          );
+
+          setProjects(updatedProjects);
+
+          if (selectedProject && selectedProject.id === projectId) {
+            setSelectedProject({
+              ...selectedProject,
+              todos: [...selectedProject.todos, newTodo],
+            });
+          }
+        };
+
+        const toggleTodo = (projectId, todoId) => {
+          const updatedProjects = projects.map((p) =>
+            p.id === projectId
+              ? {
+                  ...p,
+                  todos: p.todos.map((t) =>
+                    t.id === todoId ? { ...t, completed: !t.completed } : t
+                  ),
+                }
+              : p
+          );
+
+          setProjects(updatedProjects);
+
+          if (selectedProject && selectedProject.id === projectId) {
+            setSelectedProject({
+              ...selectedProject,
+              todos: selectedProject.todos.map((t) =>
+                t.id === todoId ? { ...t, completed: !t.completed } : t
+              ),
+            });
+          }
+        };
+
+        const deleteTodo = (projectId, todoId) => {
+          const updatedProjects = projects.map((p) =>
+            p.id === projectId
+              ? { ...p, todos: p.todos.filter((t) => t.id !== todoId) }
+              : p
+          );
+
+          setProjects(updatedProjects);
+
+          if (selectedProject && selectedProject.id === projectId) {
+            setSelectedProject({
+              ...selectedProject,
+              todos: selectedProject.todos.filter((t) => t.id !== todoId),
+            });
+          }
+        };
+
+        const exportToJSON = () => {
+          const dataStr = JSON.stringify(projects, null, 2);
+          const dataUri =
+            "data:application/json;charset=utf-8," +
+            encodeURIComponent(dataStr);
+          const exportFileDefaultName = `projects_${
+            new Date().toISOString().split("T")[0]
+          }.json`;
+
+          const linkElement = document.createElement("a");
+          linkElement.setAttribute("href", dataUri);
+          linkElement.setAttribute("download", exportFileDefaultName);
+          linkElement.click();
+        };
+
+        const importFromJSON = (event) => {
+          const file = event.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              try {
+                const importedData = JSON.parse(e.target.result);
+                if (Array.isArray(importedData)) {
+                  const isValidData = importedData.every(
+                    (project) =>
+                      // 1) обязательно поле id
+                      project.hasOwnProperty("id") &&
+                      // 2) name и description — строковые поля (даже пустые строки будут валидными)
+                      typeof project.name === "string" &&
+                      typeof project.description === "string" &&
+                      // 3) todos — массив
+                      Array.isArray(project.todos)
+                  );
+                  if (isValidData) {
+                    setProjects(importedData);
+                    setSelectedProject(null);
+                    alert("Данные успешно импортированы!");
+                  } else {
+                    alert(
+                      "Неверный формат данных. Проверьте структуру JSON файла."
+                    );
+                  }
+                } else {
+                  alert("Неверный формат данных. Ожидается массив проектов.");
+                }
+              } catch (error) {
+                alert(
+                  "Ошибка при чтении файла. Проверьте, что это корректный JSON файл."
+                );
+              }
+            };
+            reader.readAsText(file);
+          }
+          event.target.value = "";
+        };
+
+        const TodoItem = ({ todo, projectId }) => (
+          <div className="todo-item">
+            <div
+              className={`todo-checkbox ${todo.completed ? "completed" : ""}`}
+              onClick={() => toggleTodo(projectId, todo.id)}
+            >
+              {todo.completed && (
+                <i
+                  data-lucide="check"
+                  style={{ width: "16px", height: "16px" }}
+                ></i>
+              )}
+            </div>
+            <span className={`todo-text ${todo.completed ? "completed" : ""}`}>
+              {todo.text}
+            </span>
+            <button
+              className="icon-btn red"
+              onClick={() => deleteTodo(projectId, todo.id)}
+            >
+              <i
+                data-lucide="trash-2"
+                style={{ width: "16px", height: "16px" }}
+              ></i>
+            </button>
+          </div>
+        );
+
+        const NewTodoForm = ({ projectId }) => {
+          const [todoText, setTodoText] = useState("");
+
+          const handleSubmit = () => {
+            if (todoText.trim()) {
+              addTodo(projectId, todoText.trim());
+              setTodoText("");
+            }
+          };
+
+          const handleKeyPress = (e) => {
+            if (e.key === "Enter") {
+              handleSubmit();
+            }
+          };
+
+          return (
+            <div className="todo-input">
+              <input
+                type="text"
+                className="form-control"
+                value={todoText}
+                onChange={(e) => setTodoText(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Добавить новую задачу..."
+              />
+              <button className="btn btn-primary" onClick={handleSubmit}>
+                <i
+                  data-lucide="plus"
+                  style={{ width: "16px", height: "16px" }}
+                ></i>
+                Добавить
+              </button>
+            </div>
+          );
+        };
+
+        const ProjectCard = ({ project }) => (
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">{project.name}</h3>
+              <div className="card-actions">
+                <button
+                  className="icon-btn blue"
+                  onClick={() => setEditingProject(project)}
+                >
+                  <i
+                    data-lucide="edit-2"
+                    style={{ width: "16px", height: "16px" }}
+                  ></i>
+                </button>
+                <button
+                  className="icon-btn red"
+                  onClick={() => deleteProject(project.id)}
+                >
+                  <i
+                    data-lucide="trash-2"
+                    style={{ width: "16px", height: "16px" }}
+                  ></i>
+                </button>
+              </div>
+            </div>
+
+            <p
+              style={{
+                color: "#6b7280",
+                fontSize: "0.875rem",
+                marginBottom: "0.75rem",
+              }}
+            >
+              {project.description}
+            </p>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "0.5rem",
+                fontSize: "0.75rem",
+                marginBottom: "0.75rem",
+              }}
+            >
+              <div>
+                <span style={{ fontWeight: "500" }}>Приоритет: </span>
+                <span
+                  className={`badge ${
+                    project.priority === "High"
+                      ? "badge-high"
+                      : project.priority === "Medium"
+                      ? "badge-medium"
+                      : "badge-low"
+                  }`}
+                >
+                  {project.priority}
+                </span>
+              </div>
+              <div>
+                <span style={{ fontWeight: "500" }}>Статус: </span>
+                <span
+                  className={`badge ${
+                    project.status === "Active"
+                      ? "badge-active"
+                      : project.status === "Completed"
+                      ? "badge-completed"
+                      : "badge-paused"
+                  }`}
+                >
+                  {project.status}
+                </span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+                {project.todos.filter((t) => t.completed).length} из{" "}
+                {project.todos.length} задач выполнено
+              </span>
+              <button
+                className="btn btn-primary"
+                onClick={() => setSelectedProject(project)}
+                style={{ fontSize: "0.875rem", padding: "0.25rem 0.75rem" }}
+              >
+                Открыть
+              </button>
+            </div>
+          </div>
+        );
+
+        const ProjectForm = ({ project, onSave, onCancel }) => {
+          const [formData, setFormData] = useState(
+            project || {
+              name: "",
+              description: "",
+              priority: "Medium",
+              status: "Active",
+              dueDate: "",
+            }
+          );
+
+          const handleSave = () => {
+            if (formData.name.trim()) {
+              onSave(formData);
+            }
+          };
+
+          return (
+            <div className="modal">
+              <div className="modal-content">
+                <h3
+                  style={{
+                    fontSize: "1.125rem",
+                    fontWeight: "500",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  {project ? "Редактировать проект" : "Новый проект"}
+                </h3>
+
+                <div className="form-group">
+                  <label className="form-label">Название</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="Название проекта"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Описание</label>
+                  <textarea
+                    className="form-control"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    rows="3"
+                    placeholder="Описание проекта"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Приоритет</label>
+                    <select
+                      className="form-control"
+                      value={formData.priority}
+                      onChange={(e) =>
+                        setFormData({ ...formData, priority: e.target.value })
+                      }
+                    >
+                      <option value="Low">Низкий</option>
+                      <option value="Medium">Средний</option>
+                      <option value="High">Высокий</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Статус</label>
+                    <select
+                      className="form-control"
+                      value={formData.status}
+                      onChange={(e) =>
+                        setFormData({ ...formData, status: e.target.value })
+                      }
+                    >
+                      <option value="Active">Активный</option>
+                      <option value="Completed">Завершен</option>
+                      <option value="Paused">Приостановлен</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Дедлайн</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={formData.dueDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, dueDate: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.5rem",
+                    marginTop: "1.5rem",
+                  }}
+                >
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleSave}
+                    style={{ flex: 1 }}
+                  >
+                    <i
+                      data-lucide="save"
+                      style={{ width: "16px", height: "16px" }}
+                    ></i>
+                    Сохранить
+                  </button>
+                  <button
+                    className="btn btn-gray"
+                    onClick={onCancel}
+                    style={{ flex: 1 }}
+                  >
+                    <i
+                      data-lucide="x"
+                      style={{ width: "16px", height: "16px" }}
+                    ></i>
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        return (
+          <div className="container">
+            <div className="header">
+              <h1 className="title">Управление проектами</h1>
+              <div className="button-group">
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={importFromJSON}
+                  className="hidden"
+                  id="json-import"
+                />
+                <label htmlFor="json-import" className="btn btn-purple">
+                  <i
+                    data-lucide="plus"
+                    style={{ width: "16px", height: "16px" }}
+                  ></i>
+                  Импорт JSON
+                </label>
+                <button className="btn btn-success" onClick={exportToJSON}>
+                  Экспорт JSON
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setShowNewProject(true)}
+                >
+                  <i
+                    data-lucide="plus"
+                    style={{ width: "16px", height: "16px" }}
+                  ></i>
+                  Новый проект
+                </button>
+              </div>
+            </div>
+
+            {selectedProject ? (
+              <div className="project-detail">
+                <div className="project-header">
+                  <div className="project-info">
+                    <h2>{selectedProject.name}</h2>
+                    <p>{selectedProject.description}</p>
+                    <div className="project-meta">
+                      <span>
+                        <span style={{ fontWeight: "500" }}>Приоритет:</span>
+                        <span
+                          className={`badge ${
+                            selectedProject.priority === "High"
+                              ? "badge-high"
+                              : selectedProject.priority === "Medium"
+                              ? "badge-medium"
+                              : "badge-low"
+                          }`}
+                        >
+                          {selectedProject.priority}
+                        </span>
+                      </span>
+                      <span>
+                        <span style={{ fontWeight: "500" }}>Статус:</span>
+                        <span
+                          className={`badge ${
+                            selectedProject.status === "Active"
+                              ? "badge-active"
+                              : selectedProject.status === "Completed"
+                              ? "badge-completed"
+                              : "badge-paused"
+                          }`}
+                        >
+                          {selectedProject.status}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn-gray"
+                    onClick={() => setSelectedProject(null)}
+                  >
+                    Назад к проектам
+                  </button>
+                </div>
+
+                <div>
+                  <h3
+                    style={{
+                      fontSize: "1.125rem",
+                      fontWeight: "500",
+                      marginBottom: "0.75rem",
+                    }}
+                  >
+                    Задачи
+                  </h3>
+                  <NewTodoForm projectId={selectedProject.id} />
+                  <div className="todo-list">
+                    {selectedProject.todos.map((todo) => (
+                      <TodoItem
+                        key={todo.id}
+                        todo={todo}
+                        projectId={selectedProject.id}
+                      />
+                    ))}
+                    {selectedProject.todos.length === 0 && (
+                      <div className="empty-state">
+                        <p>Пока нет задач. Добавьте первую задачу выше.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid">
+                {projects.map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+                {projects.length === 0 && (
+                  <div className="empty-state" style={{ gridColumn: "1 / -1" }}>
+                    <p style={{ fontSize: "1.125rem", marginBottom: "1rem" }}>
+                      Пока нет проектов
+                    </p>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => setShowNewProject(true)}
+                      style={{ fontSize: "1rem", padding: "0.75rem 1.5rem" }}
+                    >
+                      <i
+                        data-lucide="plus"
+                        style={{ width: "16px", height: "16px" }}
+                      ></i>{" "}
+                      Создать первый проект
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {showNewProject && (
+              <ProjectForm
+                onSave={createProject}
+                onCancel={() => setShowNewProject(false)}
+              />
+            )}
+
+            {editingProject && (
+              <ProjectForm
+                project={editingProject}
+                onSave={(updatedData) => {
+                  updateProject(editingProject.id, updatedData);
+                  setEditingProject(null);
+                }}
+                onCancel={() => setEditingProject(null)}
+              />
+            )}
+          </div>
+        );
+      };
+
+      ReactDOM.render(<ProjectTodoApp />, document.getElementById("root"));
+    </script>
+  </body>
+</html>
