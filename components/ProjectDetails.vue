@@ -7,16 +7,11 @@
 
     <!-- Прогресс -->
     <div>
-      <div class="flex justify-between text-sm text-gray-500 mb-2">
-        <span>Прогресс выполнения</span>
-        <span>{{ completedTasks }} из {{ project.tasks.length }}</span>
-      </div>
-      <div class="h-2 bg-white rounded-full overflow-hidden">
-        <div
-          class="h-full bg-green-500 transition-all"
-          :style="{ width: progressPercentage + '%' }"
-        />
-      </div>
+      <ProgressBar
+        :progress="progressPercentage"
+        :variant="progressVariant"
+        label="Прогресс выполнения"
+      />
     </div>
 
     <!-- Задачи -->
@@ -159,6 +154,7 @@
 import { ref, computed } from "vue";
 import { useProjectStore } from "~/stores/projects";
 import type { Project, Task } from "~/types";
+import ProgressBar from "~/components/ui/ProgressBar.vue";
 
 const props = defineProps<{
   project: Project;
@@ -209,6 +205,13 @@ const sortedTasks = computed(() => {
     if (a.completed === b.completed) return 0;
     return a.completed ? 1 : -1;
   });
+});
+
+const progressVariant = computed(() => {
+  if (progressPercentage.value >= 100) return "success";
+  if (progressPercentage.value >= 70) return "primary";
+  if (progressPercentage.value >= 30) return "warning";
+  return "danger";
 });
 
 function formatDate(date: string) {
