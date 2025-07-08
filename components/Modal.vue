@@ -1,20 +1,20 @@
 <template>
   <Teleport to="body">
-    <Transition name="modal">
+    <!-- Затемнение фона -->
+    <Transition name="backdrop">
       <div
         v-if="show"
-        class="fixed inset-0 z-50 overflow-y-auto"
+        class="fixed inset-0 z-40 bg-gray-900/75 backdrop-blur-sm"
         @click="$emit('close')"
-      >
-        <!-- Затемнение фона -->
-        <div
-          class="fixed inset-0 bg-gray-900 bg-opacity-75 backdrop-blur-sm transition-opacity"
-        ></div>
+      ></div>
+    </Transition>
 
-        <!-- Модальное окно -->
+    <!-- Модальное окно -->
+    <Transition name="modal">
+      <div v-if="show" class="fixed inset-0 z-50 overflow-y-auto">
         <div class="flex min-h-screen items-center justify-center p-6">
           <div
-            class="relative w-full max-w-3xl transform overflow-hidden rounded-xl bg-white shadow-2xl transition-all"
+            class="relative w-full max-w-3xl transform overflow-hidden rounded-xl bg-white shadow-2xl"
             @click.stop
           >
             <!-- Заголовок -->
@@ -80,20 +80,30 @@ defineEmits<{
 </script>
 
 <style scoped>
+/* Анимация для затемнения фона */
+.backdrop-enter-active,
+.backdrop-leave-active {
+  transition: opacity 0.2s ease-out;
+}
+
+.backdrop-enter-from,
+.backdrop-leave-to {
+  opacity: 0;
+}
+
+/* Анимация для модального окна */
 .modal-enter-active,
 .modal-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.3s ease-out;
 }
 
-.modal-enter-from,
+.modal-enter-from {
+  opacity: 0;
+  transform: scale(0.95) translateY(10px);
+}
+
 .modal-leave-to {
   opacity: 0;
-  transform: scale(0.95);
-}
-
-.modal-enter-to,
-.modal-leave-from {
-  opacity: 1;
-  transform: scale(1);
+  transform: scale(0.95) translateY(10px);
 }
 </style>
