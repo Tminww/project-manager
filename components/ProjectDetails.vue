@@ -21,10 +21,6 @@
 
     <!-- Задачи -->
     <div>
-      <div class="flex items-center justify-between mb-4">
-        <h4 class="text-base font-medium text-gray-900">Задачи</h4>
-      </div>
-
       <!-- Форма новой задачи -->
       <form @submit.prevent="addNewTask" class="mb-4 flex gap-2">
         <input
