@@ -14,7 +14,16 @@ export interface YandexDiskConfig {
   token?: string;
   folderPath: string;
   fileName: string;
-  syncInterval: number; // в минутах
+  syncInterval: number;
+}
+
+// Метаданные для синхронизации
+export interface SyncMetadata {
+  version: number;
+  lastModified: string;
+  deviceId: string;
+  checksum: string;
+  projects: Project[];
 }
 
 export const useProjectStore = defineStore("projects", () => {
@@ -25,12 +34,13 @@ export const useProjectStore = defineStore("projects", () => {
   const isInitialized = ref(false);
   const isSyncing = ref(false);
   const syncError = ref<string | null>(null);
+  const deviceId = ref<string>("");
 
   // Конфигурация Яндекс.Диска
   const yandexConfig = ref<YandexDiskConfig>({
     folderPath: "/Apps/ProjectManager",
     fileName: "projects.json",
-    syncInterval: 5, // синхронизация каждые 5 минут
+    syncInterval: 5,
   });
 
   // Ключи для localStorage
@@ -40,7 +50,69 @@ export const useProjectStore = defineStore("projects", () => {
     LAST_SYNCED: "pm_last_synced",
     YANDEX_TOKEN: "pm_yandex_token",
     YANDEX_CONFIG: "pm_yandex_config",
+    DEVICE_ID: "pm_device_id",
+    VERSION: "pm_version",
   };
+
+  // Инициализация ID устройства
+  function initDeviceId() {
+    if (typeof window === "undefined") return;
+
+    let id = localStorage.getItem(STORAGE_KEYS.DEVICE_ID);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(STORAGE_KEYS.DEVICE_ID, id);
+    }
+    deviceId.value = id;
+  }
+
+  // Вычисление контрольной суммы
+  function calculateChecksum(data: Project[]): string {
+    // Сортируем проекты и их задачи для стабильной контрольной суммы
+    const sortedData = data
+      .slice()
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((project) => ({
+        ...project,
+        tasks: project.tasks.slice().sort((a, b) => a.id.localeCompare(b.id)),
+      }));
+
+    const sortedString = JSON.stringify(sortedData);
+
+    // Используем простой хеш-алгоритм для Unicode-строк
+    let hash = 0;
+    for (let i = 0; i < sortedString.length; i++) {
+      const char = sortedString.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Преобразуем в 32-битное число
+    }
+
+    // Возвращаем положительное число в виде строки
+    return Math.abs(hash).toString(16).padStart(8, "0").slice(0, 8);
+  }
+
+  // Получение версии данных
+  function getCurrentVersion(): number {
+    if (typeof window === "undefined") return 1;
+    const version = localStorage.getItem(STORAGE_KEYS.VERSION);
+    return version ? parseInt(version) : 1;
+  }
+
+  // Увеличение версии данных
+  function incrementVersion(): number {
+    const newVersion = getCurrentVersion() + 1;
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEYS.VERSION, newVersion.toString());
+    }
+    return newVersion;
+  }
+
+  // Установка версии без увеличения
+  function setVersion(version: number): void {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEYS.VERSION, version.toString());
+    }
+  }
 
   // Вычисляемые свойства
   const lastSavedFormatted = computed(() => {
@@ -77,25 +149,41 @@ export const useProjectStore = defineStore("projects", () => {
     return date.toLocaleString("ru-RU");
   }
 
+  // Создание метаданных
+  function createSyncMetadata(projectsData: Project[]): SyncMetadata {
+    return {
+      version: getCurrentVersion(),
+      lastModified: new Date().toISOString(),
+      deviceId: deviceId.value,
+      checksum: calculateChecksum(projectsData),
+      projects: projectsData,
+    };
+  }
+
   // Работа с localStorage
   function saveToLocalStorage() {
     if (typeof window === "undefined") return;
 
     try {
-      localStorage.setItem(
-        STORAGE_KEYS.PROJECTS,
-        JSON.stringify(projects.value)
-      );
+      const version = incrementVersion();
+      const metadata = createSyncMetadata(projects.value);
+
+      localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(metadata));
       localStorage.setItem(STORAGE_KEYS.LAST_SAVED, new Date().toISOString());
       lastSaved.value = new Date();
+
+      console.log(`Данные сохранены в localStorage, версия: ${version}`);
     } catch (error) {
       console.error("Ошибка при сохранении в localStorage:", error);
       throw new Error("Не удалось сохранить данные локально");
     }
   }
 
-  function loadFromLocalStorage(): Project[] {
-    if (typeof window === "undefined") return [];
+  function loadFromLocalStorage(): {
+    projects: Project[];
+    metadata?: SyncMetadata;
+  } {
+    if (typeof window === "undefined") return { projects: [] };
 
     try {
       const projectsData = localStorage.getItem(STORAGE_KEYS.PROJECTS);
@@ -111,12 +199,24 @@ export const useProjectStore = defineStore("projects", () => {
 
       if (projectsData) {
         const parsed = JSON.parse(projectsData);
-        return Array.isArray(parsed) ? parsed : [];
+
+        // Проверяем, есть ли метаданные (новый формат)
+        if (parsed.version && parsed.projects) {
+          return {
+            projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+            metadata: parsed as SyncMetadata,
+          };
+        }
+
+        // Старый формат - просто массив проектов
+        if (Array.isArray(parsed)) {
+          return { projects: parsed };
+        }
       }
-      return [];
+      return { projects: [] };
     } catch (error) {
       console.error("Ошибка при загрузке из localStorage:", error);
-      return [];
+      return { projects: [] };
     }
   }
 
@@ -128,13 +228,12 @@ export const useProjectStore = defineStore("projects", () => {
     }
 
     const config = yandexConfig.value;
-    const fileContent = JSON.stringify(data, null, 2);
+    const metadata = createSyncMetadata(data);
+    const fileContent = JSON.stringify(metadata, null, 2);
 
     try {
-      // Создаем папку, если не существует
       await createYandexDiskFolder(token, config.folderPath);
 
-      // Загружаем файл
       const uploadUrl = await getYandexDiskUploadUrl(
         token,
         `${config.folderPath}/${config.fileName}`
@@ -155,6 +254,8 @@ export const useProjectStore = defineStore("projects", () => {
       localStorage.setItem(STORAGE_KEYS.LAST_SYNCED, new Date().toISOString());
       lastSynced.value = new Date();
       syncError.value = null;
+
+      console.log(`Данные загружены в облако, версия: ${metadata.version}`);
     } catch (error) {
       console.error("Ошибка при загрузке на Яндекс.Диск:", error);
       syncError.value =
@@ -163,7 +264,7 @@ export const useProjectStore = defineStore("projects", () => {
     }
   }
 
-  async function downloadFromYandexDisk(): Promise<Project[]> {
+  async function downloadFromYandexDisk(): Promise<SyncMetadata | null> {
     const token = localStorage.getItem(STORAGE_KEYS.YANDEX_TOKEN);
     if (!token) {
       throw new Error("Токен Яндекс.Диска не настроен");
@@ -180,22 +281,40 @@ export const useProjectStore = defineStore("projects", () => {
       const response = await fetch(downloadUrl);
       if (!response.ok) {
         if (response.status === 404) {
-          // Файл не существует, возвращаем пустой массив
-          return [];
+          return null; // Файл не существует
         }
         throw new Error(`Ошибка скачивания: ${response.statusText}`);
       }
 
       const data = await response.json();
-      if (!Array.isArray(data)) {
+
+      // Проверяем формат данных
+      if (data.version && data.projects && Array.isArray(data.projects)) {
+        // Новый формат с метаданными
+        localStorage.setItem(
+          STORAGE_KEYS.LAST_SYNCED,
+          new Date().toISOString()
+        );
+        lastSynced.value = new Date();
+        syncError.value = null;
+
+        console.log(`Данные скачаны из облака, версия: ${data.version}`);
+        return data as SyncMetadata;
+      } else if (Array.isArray(data)) {
+        // Старый формат - просто массив проектов
+        const metadata: SyncMetadata = {
+          version: 1,
+          lastModified: new Date().toISOString(),
+          deviceId: "unknown",
+          checksum: calculateChecksum(data),
+          projects: data,
+        };
+
+        console.log("Конвертированы данные старого формата");
+        return metadata;
+      } else {
         throw new Error("Некорректный формат данных в облаке");
       }
-
-      localStorage.setItem(STORAGE_KEYS.LAST_SYNCED, new Date().toISOString());
-      lastSynced.value = new Date();
-      syncError.value = null;
-
-      return data;
     } catch (error) {
       console.error("Ошибка при скачивании с Яндекс.Диска:", error);
       syncError.value =
@@ -223,12 +342,10 @@ export const useProjectStore = defineStore("projects", () => {
       );
 
       if (!response.ok && response.status !== 409) {
-        // 409 = папка уже существует
         throw new Error(`Ошибка создания папки: ${response.statusText}`);
       }
     } catch (error) {
       console.error("Ошибка при создании папки:", error);
-      // Не прерываем выполнение, если папка не создалась
     }
   }
 
@@ -282,44 +399,136 @@ export const useProjectStore = defineStore("projects", () => {
     return data.href;
   }
 
-  // Синхронизация
+  // Улучшенная синхронизация с разрешением конфликтов
   async function syncWithYandexDisk(): Promise<void> {
     if (isSyncing.value) return;
 
     isSyncing.value = true;
     try {
-      // Сначала пытаемся скачать данные из облака
-      const cloudData = await downloadFromYandexDisk();
-      console.log("Данные из облака загружены:", cloudData);
+      console.log("Начинаем синхронизацию...");
 
-      // Сравниваем с локальными данными по времени изменения
-      const localLastSaved = lastSaved.value;
-      const cloudLastModified = lastSynced.value;
+      // Загружаем данные из облака
+      const cloudMetadata = await downloadFromYandexDisk();
 
-      // Если облачные данные новее или локальных данных нет
-      if (
-        !localLastSaved ||
-        (cloudLastModified && cloudLastModified > localLastSaved)
-      ) {
-        projects.value = cloudData;
-        saveToLocalStorage();
+      // Получаем локальные данные
+      const { projects: localProjects, metadata: localMetadata } =
+        loadFromLocalStorage();
+
+      if (!cloudMetadata) {
+        // Файла в облаке нет - загружаем локальные данные
+        console.log("Файл в облаке отсутствует, загружаем локальные данные");
+        await uploadToYandexDisk(projects.value);
+        return;
+      }
+
+      // Сравниваем метаданные для принятия решения
+      const shouldUseCloud = resolveSyncConflict(localMetadata, cloudMetadata);
+
+      if (shouldUseCloud) {
+        console.log("Применяем данные из облака");
+
+        // Важно: сначала устанавливаем версию из облака
+        setVersion(cloudMetadata.version);
+
+        // Затем обновляем проекты
+        projects.value = cloudMetadata.projects;
+
+        // Обновляем локальное хранилище с данными из облака
+        if (typeof window !== "undefined") {
+          const updatedMetadata = {
+            ...cloudMetadata,
+            lastModified: new Date().toISOString(),
+          };
+          localStorage.setItem(
+            STORAGE_KEYS.PROJECTS,
+            JSON.stringify(updatedMetadata)
+          );
+          localStorage.setItem(
+            STORAGE_KEYS.LAST_SAVED,
+            new Date().toISOString()
+          );
+          lastSaved.value = new Date();
+        }
       } else {
-        // Загружаем локальные данные в облако
+        console.log("Загружаем локальные данные в облако");
         await uploadToYandexDisk(projects.value);
       }
+
+      console.log("Синхронизация завершена успешно");
     } catch (error) {
       console.error("Ошибка синхронизации:", error);
-      // При ошибке синхронизации продолжаем работать с локальными данными
     } finally {
       isSyncing.value = false;
     }
   }
 
+  // Разрешение конфликтов синхронизации
+  function resolveSyncConflict(
+    local: SyncMetadata | undefined,
+    cloud: SyncMetadata
+  ): boolean {
+    // Если локальных метаданных нет, используем облачные
+    if (!local) {
+      console.log("Локальные метаданные отсутствуют, используем облако");
+      return true;
+    }
+
+    // Сравниваем версии
+    if (cloud.version > local.version) {
+      console.log(
+        `Облачная версия новее (${cloud.version} > ${local.version})`
+      );
+      return true;
+    }
+
+    if (local.version > cloud.version) {
+      console.log(
+        `Локальная версия новее (${local.version} > ${cloud.version})`
+      );
+      return false;
+    }
+
+    // Версии одинаковые, сравниваем время изменения
+    const localTime = new Date(local.lastModified).getTime();
+    const cloudTime = new Date(cloud.lastModified).getTime();
+
+    // Добавляем небольшую задержку (1 секунда) для учета возможных неточностей времени
+    const timeDiff = Math.abs(cloudTime - localTime);
+
+    if (timeDiff > 1000) {
+      // Если разница больше секунды
+      if (cloudTime > localTime) {
+        console.log("Облачные данные изменены позже");
+        return true;
+      }
+
+      if (localTime > cloudTime) {
+        console.log("Локальные данные изменены позже");
+        return false;
+      }
+    }
+
+    // Время примерно одинаковое, сравниваем контрольные суммы
+    if (local.checksum !== cloud.checksum) {
+      console.log(
+        "Контрольные суммы не совпадают, используем устройство с меньшим ID для детерминированного выбора"
+      );
+      return cloud.deviceId < local.deviceId;
+    }
+
+    // Данные идентичны
+    console.log("Данные идентичны, синхронизация не требуется");
+    return false;
+  }
+
   // Загрузка проектов
   async function loadProjects(): Promise<Project[]> {
     try {
+      // Инициализируем ID устройства
+      initDeviceId();
+
       // Загружаем из localStorage
-      const localProjects = loadFromLocalStorage();
+      const { projects: localProjects } = loadFromLocalStorage();
       projects.value = localProjects;
       isInitialized.value = true;
 
@@ -426,15 +635,31 @@ export const useProjectStore = defineStore("projects", () => {
 
   // Импорт/экспорт
   async function exportProjects(): Promise<string> {
-    return JSON.stringify(projects.value, null, 2);
+    const metadata = createSyncMetadata(projects.value);
+    return JSON.stringify(metadata, null, 2);
   }
 
-  async function importProjects(data: Project[] | string) {
+  async function importProjects(data: Project[] | string | SyncMetadata) {
     try {
-      const projectsData = typeof data === "string" ? JSON.parse(data) : data;
-      if (!Array.isArray(projectsData)) {
+      let projectsData: Project[];
+
+      if (typeof data === "string") {
+        const parsed = JSON.parse(data);
+        if (parsed.projects && Array.isArray(parsed.projects)) {
+          projectsData = parsed.projects;
+        } else if (Array.isArray(parsed)) {
+          projectsData = parsed;
+        } else {
+          throw new Error("Неверный формат данных");
+        }
+      } else if (Array.isArray(data)) {
+        projectsData = data;
+      } else if (data.projects && Array.isArray(data.projects)) {
+        projectsData = data.projects;
+      } else {
         throw new Error("Неверный формат данных");
       }
+
       projects.value = projectsData;
       return true;
     } catch (error) {
@@ -496,6 +721,7 @@ export const useProjectStore = defineStore("projects", () => {
     isSyncing,
     syncError,
     yandexConfig,
+    deviceId,
 
     // Основные методы
     loadProjects,
