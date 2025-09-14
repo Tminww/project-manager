@@ -3,6 +3,15 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ["@nuxtjs/tailwindcss", "@pinia/nuxt"],
   css: ["~/assets/css/globals.css"],
+
+  // Настройки для статической генерации
+  ssr: true,
+  nitro: {
+    prerender: {
+      routes: ["/"],
+    },
+  },
+
   app: {
     head: {
       title: "Project Manager",
@@ -28,11 +37,39 @@ export default defineNuxtConfig({
       ],
     },
   },
+
   runtimeConfig: {
+    // Приватные переменные (доступны только на сервере)
+    // В данном случае у нас нет серверной логики, но можно добавить при необходимости
+
+    // Публичные переменные (доступны на клиенте)
     public: {
-      baseURL: process.env.BASE_URL || "http://localhost:3000",
+      baseURL: process.env.NUXT_PUBLIC_BASE_URL || "",
+      yandexClientId:
+        process.env.NUXT_PUBLIC_YANDEX_CLIENT_ID ||
+        "c7e4f7f3e2b54b84a53ac2e6b9a2c39b",
+      yandexOAuthUrl:
+        process.env.NUXT_PUBLIC_YANDEX_OAUTH_URL ||
+        "https://oauth.yandex.ru/authorize",
+      yandexApiBase:
+        process.env.NUXT_PUBLIC_YANDEX_API_BASE ||
+        "https://cloud-api.yandex.net/v1/disk",
+      defaultSyncInterval:
+        Number(process.env.NUXT_PUBLIC_DEFAULT_SYNC_INTERVAL) || 5,
+      defaultFolderPath:
+        process.env.NUXT_PUBLIC_DEFAULT_FOLDER_PATH || "/Apps/ProjectManager",
+      defaultFileName:
+        process.env.NUXT_PUBLIC_DEFAULT_FILE_NAME || "projects.json",
+      appName: process.env.NUXT_PUBLIC_APP_NAME || "Project Manager",
+      appVersion: process.env.NUXT_PUBLIC_APP_VERSION || "1.0.0",
+      maxProjects: Number(process.env.NUXT_PUBLIC_MAX_PROJECTS) || 100,
+      maxTasksPerProject:
+        Number(process.env.NUXT_PUBLIC_MAX_TASKS_PER_PROJECT) || 50,
+      debugSync: process.env.NUXT_PUBLIC_DEBUG_SYNC === "true",
+      debugStorage: process.env.NUXT_PUBLIC_DEBUG_STORAGE === "true",
     },
   },
+
   tailwindcss: {
     config: {
       darkMode: "class",
@@ -46,19 +83,13 @@ export default defineNuxtConfig({
       ],
     },
   },
+
   postcss: {
     plugins: {
       tailwindcss: {},
       autoprefixer: {},
     },
   },
-  nitro: {
-    storage: {
-      data: {
-        driver: "fs",
-        base: "./.data",
-      },
-    },
-    compatibilityDate: "2025-07-08",
-  },
+
+  compatibilityDate: "2025-01-08",
 });

@@ -1,25 +1,31 @@
-# use the official Bun image
-# see all versions at https://hub.docker.com/r/oven/bun/tags
-FROM oven/bun:1 AS build
+# Используем официальный образ Node.js для сборки
+FROM node:18-alpine AS build
+
 WORKDIR /app
 
-COPY package.json bun.lock ./
+# Копируем package.json и package-lock.json
+COPY package.json package-lock.json* ./
 
-# use ignore-scripts to avoid builting node modules like better-sqlite3
-RUN bun install --frozen-lockfile --ignore-scripts
+# Устанавливаем зависимости
+RUN npm ci --only=production
 
-# Copy the entire project
+# Копируем исходный код
 COPY . .
 
-RUN bun --bun run build
+# Собираем статические файлы
+RUN npm run generate
 
-# copy production dependencies and source code into final image
-FROM oven/bun:1 AS production
-WORKDIR /app
+# Используем nginx для раздачи статических файлов
+FROM nginx:alpine AS production
 
-# Only `.output` folder is needed from the build stage
-COPY --from=build /app/.output /app
+# Копируем статические файлы из этапа сборки
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# run the app
-EXPOSE 3000/tcp
-ENTRYPOINT [ "bun", "--bun", "run", "/app/server/index.mjs" ]
+# Копируем конфигурацию nginx
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Открываем порт 80
+EXPOSE 80
+
+# Запускаем nginx
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,10 +1,48 @@
 version: "3.8"
 
 services:
-  app:
+  project-manager:
     build: .
     ports:
-      - "0.0.0.0:3000:3000"
+      - "80:80"
+    restart: unless-stopped
     environment:
       - NODE_ENV=production
-    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.project-manager.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.project-manager.entrypoints=websecure"
+      - "traefik.http.routers.project-manager.tls.certresolver=letsencrypt"
+    volumes:
+      - ./nginx-custom.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - web
+
+  # Опциональный Traefik для SSL и проксирования
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=your-email@example.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - web
+    profiles:
+      - traefik
+
+networks:
+  web:
+    external: true

@@ -10,16 +10,104 @@
             Менеджер проектов
           </h1>
           <div class="flex items-center gap-4">
-            <span class="text-sm text-gray-500">
-              Последнее сохранение: {{ projectStore.lastSavedFormatted }}
-            </span>
+            <!-- Статус синхронизации -->
+            <div class="flex items-center gap-2 text-sm">
+              <div class="flex items-center gap-1 text-gray-500">
+                <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9.5 9.293 8.207a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4a1 1 0 00-1.414-1.414L11 9.793z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                {{ projectStore.lastSavedFormatted }}
+              </div>
+              <div
+                class="flex items-center gap-1"
+                :class="{
+                  'text-blue-600': projectStore.isSyncing,
+                  'text-red-600': projectStore.syncError,
+                  'text-green-600':
+                    !projectStore.syncError && projectStore.lastSynced,
+                  'text-yellow-600':
+                    !projectStore.syncError && !projectStore.lastSynced,
+                }"
+              >
+                <svg
+                  v-if="projectStore.isSyncing"
+                  class="w-4 h-4 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.364-7.364l-2.828 2.828M8.464 8.464L5.636 5.636m12.728 12.728l-2.828-2.828M8.464 15.536l-2.828 2.828"
+                  />
+                </svg>
+                <svg
+                  v-else
+                  class="w-4 h-4"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"
+                  />
+                </svg>
+                {{ projectStore.lastSyncedFormatted }}
+              </div>
+            </div>
+
+            <!-- Кнопки управления -->
+            <Button
+              variant="secondary"
+              size="sm"
+              @click="showSyncSettings = true"
+              :class="{
+                'ring-2 ring-red-300': projectStore.syncError,
+                'ring-2 ring-green-300':
+                  !projectStore.syncError && projectStore.lastSynced,
+              }"
+            >
+              <svg class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fill-rule="evenodd"
+                  d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              Синхронизация
+            </Button>
+
             <Button variant="secondary" size="sm" @click="exportProjects">
+              <svg class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fill-rule="evenodd"
+                  d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                  clip-rule="evenodd"
+                />
+              </svg>
               Экспорт
             </Button>
+
             <Button variant="secondary" size="sm" @click="importProjects">
+              <svg class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fill-rule="evenodd"
+                  d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 11-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
               Импорт
             </Button>
+
             <Button variant="primary" @click="openProjectModal()">
+              <svg class="w-4 h-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fill-rule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clip-rule="evenodd"
+                />
+              </svg>
               Новый проект
             </Button>
           </div>
@@ -79,7 +167,27 @@
               />
             </template>
             <div v-else class="col-span-full text-center py-12 text-gray-500">
-              Нет проектов. Создайте новый проект, нажав кнопку "Новый проект".
+              <div
+                class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4"
+              >
+                <svg
+                  class="h-6 w-6 text-gray-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
+                </svg>
+              </div>
+              <p class="text-lg font-medium">Нет проектов</p>
+              <p class="text-sm text-gray-500 mt-1">
+                Создайте новый проект, нажав кнопку "Новый проект"
+              </p>
             </div>
           </div>
         </ClientOnly>
@@ -121,7 +229,26 @@
           v-else
           class="h-full flex items-center justify-center text-gray-500 p-6 text-center"
         >
-          Выберите проект, чтобы увидеть задачи
+          <div>
+            <div
+              class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4"
+            >
+              <svg
+                class="h-6 w-6 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                />
+              </svg>
+            </div>
+            <p>Выберите проект, чтобы увидеть задачи</p>
+          </div>
         </div>
       </div>
     </main>
@@ -129,14 +256,21 @@
     <!-- Модальное окно для проекта -->
     <Modal :show="showProjectModal" @close="closeProjectModal">
       <template #header>
-        {{ selectedProject ? "Редактировать проект" : "Новый проект" }}
+        {{ selectedProjectForEdit ? "Редактировать проект" : "Новый проект" }}
       </template>
 
       <ProjectForm
-        :project="selectedProject"
+        :project="selectedProjectForEdit"
         @submit="saveProject"
         @cancel="closeProjectModal"
       />
+    </Modal>
+
+    <!-- Модальное окно настроек синхронизации -->
+    <Modal :show="showSyncSettings" @close="showSyncSettings = false">
+      <template #header> Настройки синхронизации </template>
+
+      <YandexDiskSettings />
     </Modal>
   </div>
 </template>
@@ -146,12 +280,19 @@ import { ref, onMounted } from "vue";
 import type { Project } from "~/types";
 import { useProjectStore } from "~/stores/projects";
 import ProjectDetails from "../components/ProjectDetails.vue";
+import ProjectForm from "../components/ProjectForm.vue";
+import ProjectCard from "../components/ProjectCard.vue";
+import YandexDiskSettings from "../components/YandexDiskSettings.vue";
+import SyncStatus from "../components/SyncStatus.vue";
+import Modal from "../components/Modal.vue";
 import Badge from "../components/ui/Badge.vue";
 import Button from "../components/ui/Button.vue";
 
 const projectStore = useProjectStore();
 const showProjectModal = ref(false);
+const showSyncSettings = ref(false);
 const selectedProject = ref<Project | undefined>(undefined);
+const selectedProjectForEdit = ref<Project | undefined>(undefined);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 
@@ -160,6 +301,7 @@ onMounted(async () => {
     await projectStore.loadProjects();
   } catch (err) {
     error.value = "Ошибка при загрузке проектов";
+    console.error("Ошибка загрузки:", err);
   } finally {
     isLoading.value = false;
   }
@@ -192,29 +334,28 @@ function getUrgencyVariant(urgency: string) {
 }
 
 function showProjectDetails(project: Project) {
-  console.log("Показываю детали проекта:", project);
   selectedProject.value = project;
 }
 
 function closeProjectDetails() {
-  console.log("Закрываю детали проекта");
   selectedProject.value = undefined;
 }
 
 function openProjectModal(project?: Project) {
-  selectedProject.value = project;
+  selectedProjectForEdit.value = project;
   showProjectModal.value = true;
 }
 
 function closeProjectModal() {
   showProjectModal.value = false;
+  selectedProjectForEdit.value = undefined;
 }
 
 async function saveProject(projectData: Omit<Project, "id" | "tasks">) {
   try {
-    if (selectedProject.value) {
+    if (selectedProjectForEdit.value) {
       await projectStore.updateProject({
-        ...selectedProject.value,
+        ...selectedProjectForEdit.value,
         ...projectData,
       });
     } else {
@@ -241,52 +382,22 @@ async function deleteProject(project: Project) {
   }
 }
 
-async function deleteTask(projectId: string, taskId: string) {
-  if (confirm("Вы уверены, что хотите удалить эту задачу?")) {
-    try {
-      await projectStore.deleteTodo(projectId, taskId);
-    } catch (error) {
-      console.error("Ошибка при удалении задачи:", error);
-      alert("Произошла ошибка при удалении задачи");
-    }
-  }
-}
-
-async function toggleTask(projectId: string, taskId: string) {
-  try {
-    await projectStore.toggleTask(projectId, taskId);
-  } catch (error) {
-    console.error("Ошибка при изменении статуса задачи:", error);
-    alert("Произошла ошибка при изменении статуса задачи");
-  }
-}
-
-function calculateProgress(project: Project): number {
-  if (!project.tasks.length) return 0;
-  const completed = project.tasks.filter((task) => task.completed).length;
-  return Math.round((completed / project.tasks.length) * 100);
-}
-
-function getProgressVariant(
-  progress: number
-): "primary" | "success" | "warning" | "danger" {
-  if (progress >= 100) return "success";
-  if (progress >= 70) return "primary";
-  if (progress >= 30) return "warning";
-  return "danger";
-}
-
 async function exportProjects() {
-  const data = JSON.stringify(projectStore.projects, null, 2);
-  const blob = new Blob([data], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `projects_${new Date().toISOString().split("T")[0]}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try {
+    const data = await projectStore.exportProjects();
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `projects_${new Date().toISOString().split("T")[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Ошибка экспорта:", error);
+    alert("Ошибка при экспорте данных");
+  }
 }
 
 async function importProjects() {
@@ -301,9 +412,11 @@ async function importProjects() {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const data = JSON.parse(e.target?.result as string);
+        const data = e.target?.result as string;
         await projectStore.importProjects(data);
+        alert("Данные успешно импортированы!");
       } catch (error) {
+        console.error("Ошибка импорта:", error);
         alert("Ошибка при импорте файла");
       }
     };
