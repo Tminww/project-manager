@@ -44,29 +44,29 @@ export default defineNuxtConfig({
 
     // Публичные переменные (доступны на клиенте)
     public: {
-      baseURL: process.env.NUXT_PUBLIC_BASE_URL || "",
+      baseURL: import.meta.env.NUXT_PUBLIC_BASE_URL || "",
       yandexClientId:
-        process.env.NUXT_PUBLIC_YANDEX_CLIENT_ID ||
-        "c7e4f7f3e2b54b84a53ac2e6b9a2c39b",
+        import.meta.env.NUXT_PUBLIC_YANDEX_CLIENT_ID || "c7e4f7f3e2b54b84a53ac",
       yandexOAuthUrl:
-        process.env.NUXT_PUBLIC_YANDEX_OAUTH_URL ||
+        import.meta.env.NUXT_PUBLIC_YANDEX_OAUTH_URL ||
         "https://oauth.yandex.ru/authorize",
       yandexApiBase:
-        process.env.NUXT_PUBLIC_YANDEX_API_BASE ||
+        import.meta.env.NUXT_PUBLIC_YANDEX_API_BASE ||
         "https://cloud-api.yandex.net/v1/disk",
       defaultSyncInterval:
-        Number(process.env.NUXT_PUBLIC_DEFAULT_SYNC_INTERVAL) || 5,
+        Number(import.meta.env.NUXT_PUBLIC_DEFAULT_SYNC_INTERVAL) || 5,
       defaultFolderPath:
-        process.env.NUXT_PUBLIC_DEFAULT_FOLDER_PATH || "/Apps/ProjectManager",
+        import.meta.env.NUXT_PUBLIC_DEFAULT_FOLDER_PATH ||
+        "/Apps/ProjectManager",
       defaultFileName:
-        process.env.NUXT_PUBLIC_DEFAULT_FILE_NAME || "projects.json",
-      appName: process.env.NUXT_PUBLIC_APP_NAME || "Project Manager",
-      appVersion: process.env.NUXT_PUBLIC_APP_VERSION || "1.0.0",
-      maxProjects: Number(process.env.NUXT_PUBLIC_MAX_PROJECTS) || 100,
+        import.meta.env.NUXT_PUBLIC_DEFAULT_FILE_NAME || "projects.json",
+      appName: import.meta.env.NUXT_PUBLIC_APP_NAME || "Project Manager",
+      appVersion: import.meta.env.NUXT_PUBLIC_APP_VERSION || "1.0.0",
+      maxProjects: Number(import.meta.env.NUXT_PUBLIC_MAX_PROJECTS) || 100,
       maxTasksPerProject:
-        Number(process.env.NUXT_PUBLIC_MAX_TASKS_PER_PROJECT) || 50,
-      debugSync: process.env.NUXT_PUBLIC_DEBUG_SYNC === "true",
-      debugStorage: process.env.NUXT_PUBLIC_DEBUG_STORAGE === "true",
+        Number(import.meta.env.NUXT_PUBLIC_MAX_TASKS_PER_PROJECT) || 50,
+      debugSync: import.meta.env.NUXT_PUBLIC_DEBUG_SYNC === "true",
+      debugStorage: import.meta.env.NUXT_PUBLIC_DEBUG_STORAGE === "true",
     },
   },
 
